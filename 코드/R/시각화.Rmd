@@ -1,0 +1,788 @@
+---
+title: "kdata"
+author: "Stats"
+date: "11/18/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+#setwd('~/Desktop/kdata')
+gaapd <- read.csv('GAAPD.csv', encoding = 'CP949')
+gaapm <- read.csv('GAAPM.csv', encoding = 'CP949')
+```
+
+
+# head
+```{r}
+summary(gaapd)
+```
+```{r}
+summary(gaapm)
+```
+```{r}
+head(gaapd)
+```
+```{r}
+head(gaapm)
+```
+```{r}
+colnames(gaapd) <- c("회사명",	"거래소코드",	'회계년도',	'자산총계(요약)',	'부채총계(요약)',	'자본총계(요약)',	'매출액(요약)',	'매출원가(요약)',	'매출총이익(요약)',	'판매비와 관리비(요약)',	'영업이익(요약)',	'당기순이익(요약)')
+colnames(gaapm) <-c("회사명",	"거래소코드",	'회계년도',	'자산총계(요약)',	'부채총계(요약)',	'자본총계(요약)',	'매출액(요약)',	'매출원가(요약)',	'매출총이익(요약)',	'판매비와 관리비(요약)',	'영업이익(요약)',	'당기순이익(요약)')
+```
+
+```{r}
+#multiplot
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist = NULL, cols = 1, layout = NULL, title = NULL, 
+                      fontsize = 14, fontfamily = "NanumGothic", fontface = "bold") {
+  require(grid)
+  plots <- c(list(...), plotlist)
+  numPlots = length(plots)
+  if (is.null(layout)) {
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+   if (length(title)>0){
+    layout <- rbind(rep(0, ncol(layout)), layout)
+  }
+   if (numPlots==1) {
+    print(plots[[1]])
+   } else {
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), 
+                          ncol(layout), 
+                          heights = if (length(title)>0) {unit(c(0.5, rep(5,nrow(layout)-1)), "null")}
+                          else {unit(c(rep(5, nrow(layout))), "null")})))
+    if(length(title) > 1){
+    ncols <- 1:ncol(layout)
+    for(i in seq(ncols)){
+      grid.text(title[i], 
+                              vp = viewport(layout.pos.row = 1, layout.pos.col = i),
+                              gp = gpar(fontsize = fontsize, fontfamily = fontfamily, fontface = fontface))
+    }
+    } else {
+      grid.text(title, 
+                vp = viewport(layout.pos.row = 1, layout.pos.col = 1:ncol(layout)),
+                gp = gpar(fontsize = fontsize, fontfamily = fontfamily, fontface = fontface))
+    }
+    for (i in 1:numPlots) {
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+       print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+
+
+
+#### ggplot으로 한번에 여러 칼럼 값을 출력하는 함수 제작
+```{r}
+library(ggplot2)
+library(extrafont)
+#gaapd1 <- as.data.frame(as.numeric(unlist(gaapd)))
+#font_import(pattern = "Nanum")
+theme_set(theme_grey(base_family='NanumGothic'))
+
+myplot <- function(df, colsnum) {
+  p1 <- ggplot(df, aes(x = df[,3], y = as.numeric(gsub(",","", df[,colsnum])),
+                          group = 회사명, color = 회사명)) +
+    geom_line() + labs(x = "")
+  p2 <- p1 + labs(y = colnames(df)[colsnum]) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+    ggsave(filename = paste("../",colsnum, ".png"))
+  return(p2)
+}
+
+
+```
+
+## 모든 회사의 데이터를 하나의 지표씩 그래프로 넣어보기
+### GAAP 당기순이익
+```{r}
+pd <- list()
+
+for (i in 4:length(gaapd)){
+  pd[[i-3]] <- list(myplot(gaapd, i))
+}
+
+multiplot(plotlist = pd, cols = 3,title = "기타부동산 개발 및 공급업(당기순이익) (GAAP)")
+
+#multiplot(myplot(gaapd, 4), myplot(gaapd, 5), myplot(gaapd, 6), myplot(gaapd, 7))
+# for (i in 4:length(gaapd)){
+#   myplot(gaapd, i)
+#   }
+```
+
+### GAAP 매출액 
+```{r}
+pm <- list()
+
+for (i in 4:length(gaapm)){
+  pm[[i-3]] <- list(myplot(gaapm, i))
+}
+
+multiplot(plotlist = pm, cols = 3, title = "기타 부동산 개발 및 공급업(매출액)(GAAP)")
+
+for (i in 4:length(gaapm)){
+ myplot(gaapm, i)
+ }
+```
+기타 부동산 개발 및 공급업에서는 
+현재 엠디엠플러스를 가장 유망한 기업으로 봐야겠어요! 
+기타 부동산 개발 및 공급업에 3년간 영업이익률과, ROA 시각화 자료가 필요할 것 같아요. 
+여기서는 엠디엠 플러스를 가장 성과가 좋은 기업으로 결론을 지으면 좋을 것 같아요!
+
+<엠디엠플러스 시각화> + 최근 3년(2018~2020)
+1. 영업이익률 = 영업이익(요약)/매출액(요약)
+2. 총자산수익률(ROA) = 당기순이익(요약)/자산총계(요약)
+```{r}
+library(magrittr)
+# 매출액 기준 (주)엠디엠플러스 재무비율
+# 매출액
+gaapm1 %>% filter(회사명 == "(주)엠디엠플러스") %>%
+  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) %>% 
+  mutate(영업이익률 = `영업이익(요약)` / `매출액(요약)`) %>%
+  mutate(`총자산수익률(ROA)` = `당기순이익(요약)` / `자산총계(요약)`) -> gaapm_mdm#%>%
+#  select(영업이익률, `총자산수익률(ROA)`) 
+gaapm
+
+multiplot(myplot(gaapm_mdm, 13), myplot(gaapm_mdm, 14), title = "매출액 기준 (주)엠디엠플러스 재무비율")
+
+```
+
+
+```{r}
+# 당기순이익
+library(dplyr)
+gaapd1 %>% filter(회사명 == "(주)엠디엠플러스") %>%
+  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) %>% 
+  mutate(영업이익률 = `영업이익(요약)` / `매출액(요약)`) %>%
+  mutate(`총자산수익률(ROA)` = `당기순이익(요약)` / `자산총계(요약)`) -> gaapd_mdm#%>%
+#  select(영업이익률, `총자산수익률(ROA)`) 
+myplot1(gaapd_mdm, 14)
+
+myplot1 <- function(df, colsnum) {
+  p1 <- ggplot(df, aes(x = unlist(df[,3]), y = unlist(df[,colsnum]),
+                          group = 회사명, color = 회사명)) +
+    geom_line() + labs(x = "")
+  p2 <- p1 + labs(y = colnames(df)[colsnum]) + theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
+    ggsave(filename = paste("../",colsnum, ".png"))
+  return(p2)
+}
+
+
+multiplot(myplot(gaapd_mdm, 13), myplot(gaapd_mdm, 14), title = "최근 3년간 (주)엠디엠플러스 재무비율")
+
+```
+
+
+호현님 우선 산업별 두 개 기준으로 재무제표 데이터 보내드리는데요 중요한게 매출액 기준과 당기순이익 기준으로 보면 
+### 매출순위에는 없는데 당기순이익높은 것을 좀 중점적으로 봐야할 것 같아요!
+```{r}
+ifrsm <- readxl::read_excel('ifrsm.xlsx')
+ifrsd <- readxl::read_excel('ifrsd.xlsx')
+```
+
+
+```{r}
+head(ifrsm);head(ifrsd)
+```
+```{r}
+colnames(ifrsm)
+colnames(ifrsd)
+```
+
+```{r}
+# 함수
+myplot <- function(df, colsnum) {
+  p1 <- ggplot(df, aes(x = unlist(df[,3]), y = unlist(df[,colsnum]),group = 회사명, color = 회사명)) +
+    geom_line() + labs(x = "")
+  p2 <- p1 + labs(y = colnames(df)[colsnum]) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
+    ggsave(filename = paste("../",colsnum, ".png"))
+  return(p2)
+}
+```
+
+
+### 그외자동차용신품제조업(매출액)(IFRS)
+```{r}
+pm <- list()
+
+for (i in 4:12){
+  pm[[i-3]] <- list(myplot(ifrsm, i))
+}
+options(scipen = 99999)
+myplot(ifrsm, 4)
+multiplot(plotlist = pm, cols = 3, title = "그외자동차용신품제조업(매출액)(IFRS)")
+```
+
+그래서 
+추가로 매출액 기준별 기업들 영업이익별도 한 번 확인해주시면 감사합니다:)
+#### 그외자동차용신품제조업(당기순이익)(IFRS)
+```{r}
+pd <- list()
+
+for (i in 4:12){
+  pd[[i-3]] <- list(myplot(ifrsd, i))
+}
+
+multiplot(plotlist = pd, cols = 3, title = "그외자동차용신품제조업(당기순이익)(IFRS)")
+```
+```{r}
+# 비테스코테크놀로지스코리아(주)  현대모비스(주) 현대위아(주)
+# 매출액 
+library(dplyr)
+ifrsm %>% filter(회사명 %in% c("비테스코테크놀로지스코리아(주)", "현대모비스(주)", "현대위아(주)")) -> ifrsm1
+pm <- list()
+
+for (i in 4:12){
+  pm[[i-3]] <- list(myplot(ifrsm1, i))
+}
+
+multiplot(plotlist = pm, cols = 3, title = "그외자동차용신품제조업(매출액)(IFRS)")
+```
+
+
+```{r}
+# 당기순이익
+ifrsd %>% filter(회사명 %in% c("비테스코테크놀로지스코리아(주)", "현대모비스(주)", "현대위아(주)")) -> ifrsd1
+pd <- list()
+
+for (i in 4:12){
+  pd[[i-3]] <- list(myplot(ifrsd1, i))
+}
+
+multiplot(plotlist = pd, cols = 3, title = "그외자동차용신품제조업(당기순이익)(IFRS)")
+
+
+```
+
+## 단독주택건설업
+```{r}
+# 데이터 불러오기
+home_ifrsm <- read_excel("단독주택건설업(매출액)(IFRS).xlsx")
+home_ifrsd <- read_excel("단독주택건설업(당기순이익)(IFRS).xlsx")
+
+```
+
+### 단독주택건설업(매출액)
+```{r}
+pm <- list()
+
+for (i in 4:12){
+  pm[[i-3]] <- list(myplot(home_ifrsm, i))
+}
+
+multiplot(plotlist = pm, cols = 3, title = "단독주택건설업(매출액)(IFRS)")
+```
+
+### 단독주택건설업(당기순이익)
+```{r}
+pd <- list()
+
+for (i in 4:12){
+  pd[[i-3]] <- list(myplot(home_ifrsd, i))
+}
+
+multiplot(plotlist = pd, cols = 3, title = "단독주택건설업(당기순이익)(IFRS)")
+```
+
+### 데이터로드
+```{r}
+home_gaapm <- read_excel("주거용(매출액)(GAAP).xlsx")
+home_gaapd <- read_excel("주거용(당기순이익)(GAAP).xlsx")
+
+nhome_gaapm <- read_excel("비주거용(매출액)(GAAP).xlsx")
+nhome_gaapd <- read_excel("비주거용(당기순이익)(GAAP).xlsx")
+```
+
+
+
+### 주거용(매출액)
+```{r}
+# 주거용(매출액)(GAAP)
+pm <- list()
+
+for (i in 4:12){
+  pm[[i-3]] <- list(myplot(home_gaapm, i))
+}
+
+multiplot(plotlist = pm, cols = 3, title = "주거용(매출액)(GAAP)")
+```
+### 주거용(당기순이익)
+```{r}
+# 주거용(당기순이익)(GAAP)
+pd <- list()
+
+for (i in 4:12){
+  pd[[i-3]] <- list(myplot(home_gaapd, i))
+}
+
+multiplot(plotlist = pm, cols = 3, title = "주거용(당기순이익)(GAAP)")
+```
+
+### 비주거용(매출액)
+```{r}
+# 주거용(매출액)(GAAP)
+pm <- list()
+
+for (i in 4:12){
+  pm[[i-3]] <- list(myplot(nhome_gaapm, i))
+}
+
+multiplot(plotlist = pm, cols = 3, title = "비주거용(매출액)(GAAP)")
+```
+
+### 비주거용(당기순이익)
+```{r}
+# 주거용(당기순이익)(GAAP)
+pd <- list()
+
+for (i in 4:12){
+  pd[[i-3]] <- list(myplot(nhome_gaapd, i))
+}
+
+multiplot(plotlist = pd, cols = 3, title = "비주거용(당기순이익)(GAAP)")
+```
+
+
+### 4차산업혁명 데이터
+```{r}
+# 데이터 로드
+four_ifrsm <- read_excel("4차산업혁명(매출액)(IFRS).xlsx")
+four_ifrsd <- read_excel("4차산업혁명(당기순이익)(IFRS).xlsx")
+```
+
+### 4차산업혁명(매출액)(IFRS)
+```{r}
+# 4차산업혁명(매출액)(IFRS)
+pm <- list()
+
+for (i in 4:12){
+  pm[[i-3]] <- list(myplot(four_ifrsm, i))
+}
+
+multiplot(plotlist = pm, cols = 3, title = "4차산업혁명(매출액)(IFRS)")
+```
+
+
+### 4차산업혁명(당기순이익)(IFRS)
+```{r}
+# 4차산업혁명(당기순이익)(IFRS)
+pd <- list()
+
+for (i in 4:12){
+  pd[[i-3]] <- list(myplot(four_ifrsd, i))
+}
+
+multiplot(plotlist = pd, cols = 3, title = "4차산업혁명(당기순이익)(IFRS)")
+```
+
+2.기타 부동산 개발 및 공급업 기준
+현재 엠디엠플러스의 높은 성장율
+엠디엠플러스와 동종업계 기업들의 재무비율 시각화 
+
+ROA,ROE, 영업이익률,당기순익률
+
+```{r}
+colnames(gaapm1)
+```
+
+
+### 엠디엠플러스와 동종업계 기업들의 재무비율 시각화 
+```{r}
+# 매출액 기준 재무비율
+# 매출액
+gaapm1 %>%
+  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) %>% 
+  mutate(`총자산수익률(ROA)` = `당기순이익(요약)` / `자산총계(요약)`) %>% 
+  mutate(`자기자본수익률(ROE)` = `당기순이익(요약)` / `자본총액(요약)`) %>% 
+  mutate(영업이익률 = `영업이익(요약)` / `매출액(요약)`) %>% 
+  mutate(`당기순이익률` = `당기순이익(요약)` / `발행주식수`) -> gaapm_ratio#%>%
+#  select(영업이익률, `총자산수익률(ROA)`) 
+
+
+multiplot(myplot(gaapm_ratio, 13), myplot(gaapm_ratio, 14), title = "매출액 기준 기타 부동산 개발 및 공급업 재무비율(3년)")
+```
+```{r}
+# 당기순이익 기준 재무비율
+# 매출액
+gaapd1 %>%
+  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) %>% 
+  mutate(영업이익률 = `영업이익(요약)` / `매출액(요약)`) %>%
+  mutate(`총자산수익률(ROA)` = `당기순이익(요약)` / `자산총계(요약)`) -> gaapd_ratio#%>%
+#  select(영업이익률, `총자산수익률(ROA)`) 
+
+
+multiplot(myplot(gaapd_ratio, 13), myplot(gaapd_ratio, 14), title = "당기순이익 기준 기타 부동산 개발 및 공급업 재무비율(3년)")
+```
+
+```{r}
+# 매출액 기준 재무비율
+# 매출액
+gaapm1 %>%
+#  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) %>% 
+  mutate(영업이익률 = `영업이익(요약)` / `매출액(요약)`) %>%
+  mutate(`총자산수익률(ROA)` = `당기순이익(요약)` / `자산총계(요약)`) -> gaapm_ratio#%>%
+#  select(영업이익률, `총자산수익률(ROA)`) 
+
+
+multiplot(myplot(gaapm_ratio, 13), myplot(gaapm_ratio, 14), title = "매출액 기준 기타 부동산 개발 및 공급업 재무비율(전 기간)")
+```
+
+```{r}
+# 당기순이익 기준 재무비율
+# 매출액
+gaapd1 %>%
+#  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) %>% 
+  mutate(영업이익률 = `영업이익(요약)` / `매출액(요약)`) %>%
+  mutate(`총자산수익률(ROA)` = `당기순이익(요약)` / `자산총계(요약)`) -> gaapd_ratio#%>%
+#  select(영업이익률, `총자산수익률(ROA)`) 
+
+
+multiplot(myplot(gaapd_ratio, 13), myplot(gaapd_ratio, 14), title = "당기순이익 기준 기타 부동산 개발 및 공급업 재무비율(전 기간)")
+```
+
+
+```{r}
+# 서희건설동종업계 : ROA, ROE, 영업이익률
+seohee <- read_excel("서희건설동종업계.xlsx")
+colnames(seohee)
+```
+
+
+```{r}
+pd <- list()
+
+for (i in 16:18){
+  pd[[i-15]] <- list(myplot(seohee, i))
+}
+
+multiplot(plotlist = pd, title = "서희건설 동종업계 재무비율(전 기간)")
+```
+
+
+```{r}
+pd <- list()
+seohee %>% 
+  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) -> seohee3
+for (i in 16:18){
+  pd[[i-15]] <- list(myplot(seohee3, i))
+}
+
+multiplot(plotlist = pd, title = "서희건설 동종업계 재무비율(3년)")
+```
+
+# 에프엔에프동종업계, 한화호텔앤드리조트동종업계
+```{r}
+fnf_ratio <- read_excel("에프앤에프동종업계.xlsx")
+hhotelnresort <- read_excel("한화호텔앤드리조트동종업계.xlsx")
+```
+
+
+```{r}
+pd <- list()
+
+for (i in 16:18){
+  pd[[i-15]] <- list(myplot(fnf_ratio, i))
+}
+
+multiplot(plotlist = pd, title = "에프앤에프 동종업계 재무비율(전 기간)")
+```
+
+```{r}
+pd <- list()
+fnf_ratio %>% 
+  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) -> fnf_ratio3
+for (i in 16:18){
+  pd[[i-15]] <- list(myplot(fnf_ratio3, i))
+}
+
+multiplot(plotlist = pd, title = "에프앤에프 동종업계 재무비율(3년)")
+```
+
+## 한화호텔앤리조트 동종업계
+```{r}
+pd <- list()
+
+for (i in 16:18){
+  pd[[i-15]] <- list(myplot(hhotelnresort, i))
+}
+
+multiplot(plotlist = pd, title = "한화호텔앤리조트 동종업계 재무비율(전 기간)")
+```
+
+```{r}
+pd <- list()
+hhotelnresort %>% 
+  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) -> hhotelnresort3
+for (i in 16:18){
+  pd[[i-15]] <- list(myplot(hhotelnresort3, i))
+}
+
+multiplot(plotlist = pd, title = "한화호텔앤리조트 동종업계 재무비율(3년)")
+```
+
+2번 : ROA,ROE, 영업이익률,당기순익률, 영업이익 증가율, 
+
+```{r}
+second_mdm <- read_excel("2번엠디엠플러스.xlsx")
+
+colnames(second_mdm)[16:19]
+```
+
+```{r}
+pd <- list()
+
+for (i in 16:19){
+  pd[[i-15]] <- list(myplot(second_mdm, i))
+}
+
+multiplot(plotlist = pd, title = "엠디엠플러스 재무비율(전 기간)")
+```
+
+```{r}
+pd <- list()
+second_mdm %>% 
+  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) -> second_mdm3
+for (i in 16:19){
+  pd[[i-15]] <- list(myplot(second_mdm3, i))
+}
+
+multiplot(plotlist = pd, title = "엠디엠플러스 재무비율(3년)")
+```
+
+### 3번 : 영업이익률,ROA,ROE,당기순이익률 유동비율, 부채비용 비율,자기자본비율
+
+```{r}
+mobis <- read_excel("3번현대모비스.xlsx")
+colnames(mobis)[16:ncol(mobis)]
+```
+
+```{r}
+pd <- list()
+
+for (i in 16:ncol(mobis)){
+  pd[[i-15]] <- list(myplot(mobis, i))
+}
+
+multiplot(plotlist = pd, cols = 2, title = "현대모비스와 상위 동종업계 재무비율(전 기간)")
+```
+
+
+```{r}
+pd <- list()
+mobis %>% 
+  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) -> mobis3
+for (i in 16:19){
+  pd[[i-15]] <- list(myplot(mobis3, i))
+}
+
+multiplot(plotlist = pd, cols = 2, title = "현대모비스와 상위 동종업계 재무비율(3년)")
+```
+
+```{r}
+# 3번 추가 : 판매관리비 시각화
+colnames(mobis)[10]
+myplot(mobis, 10)
+```
+
+```{r}
+myplot(mobis3, 10)
+```
+
+
+3번 관련 추가사항 :
+
+혹시 방금 한 현대위아 비테스코테크놀로지코리아 
+재무제표 중에서 판매관리비 시각화 가능할까요 호현님?
+
+이유는 지금 매출은 높은데 당기순이익이 낲은 현대위아 때문에 비용차이가 많이나는지 궁금해서요!
+
+혹시 둘의 영업이익도 시각화가 가능할까요 ㅠㅠ?
+```{r}
+
+colnames(mobis)[c(7,10,11)]
+mobis %>% filter(`회사명` %in% c("현대위아(주)", "비테스코테크놀로지스코리아(주)")) -> mobis_part
+multiplot(myplot(mobis_part,7), myplot(mobis_part,10), myplot(mobis_part,11))
+```
+
+2번 추가 : 엠디엠플러스 성장률 관련 비율 중점적으로 비교하라고 말씀하셔서 영업이익증가율 =[(당기영업이익-전기영업이익)/전기영업이익)]x100, 매출액증가율 = (당기매출액-전기매출액)/ 전기매출액 x100 시각화
+```{r}
+colnames(mdm_plus)[22:23]
+na.omit(mdm_plus)
+multiplot(myplot(na.omit(mdm_plus), 22),myplot(na.omit(mdm_plus), 23), title = "엠디엠플러스 증가율(전 기간)")
+```
+
+
+```{r}
+mdm_plus %>% 
+    filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) -> mdm_plus3
+multiplot(myplot(na.omit(mdm_plus3), 22),myplot(na.omit(mdm_plus3), 23), title = "엠디엠플러스 증가율(3년)")
+```
+
+### 4번 : 영업이익률, 당기순이익률,ROA,ROE
+
+```{r}
+four_gs <- read_excel("4번지에스건설.xlsx")
+colnames(four_gs)[16:19]
+```
+
+```{r}
+pd <- list()
+
+for (i in 16:19){
+  pd[[i-15]] <- list(myplot(four_gs, i))
+}
+
+multiplot(plotlist = pd, cols = 2, title = "지에스건설과 쌍용건설의 재무비율(전 기간)")
+```
+
+```{r}
+pd <- list()
+four_gs %>% 
+  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) -> four_gs3
+for (i in 16:19){
+  pd[[i-15]] <- list(myplot(four_gs3, i))
+}
+
+multiplot(plotlist = pd, cols = 2, title = "지에스건설과 쌍용건설의 재무비율(3년)")
+```
+
+5번 : ROA,ROE,영업이익률,당기순이익률
+```{r}
+fifth_hoban <- read_excel("5번호반건설_수정.xlsx")
+colnames(fifth_hoban)[16:19]
+```
+
+```{r}
+pd <- list()
+
+for (i in 16:19){
+  pd[[i-15]] <- list(myplot(fifth_hoban, i))
+}
+
+multiplot(plotlist = pd, cols = 2, title = "호반건설과 한스자람의 재무비율(전 기간)")
+```
+### GS건설 추가 3개월 비교(2019, 2020반기)
+```{r}
+gs3month <- read_excel("지에스건설_3개월.xlsx")
+
+colnames(gs3month)
+
+#rownames(gs3month) <- gs3month$...1
+#gs3m <- gs3month[,-1]
+rownames(gs3m)<- gs3month$...1
+
+df_gs <- as.data.frame(t(as.matrix(gs3m)))
+
+
+ggplot(df_gs, aes(x = rownames(df_gs), y = df_gs[,1], fill = c("A", "B"))) +
+  geom_bar(stat = 'identity') + labs(x = "회계 기수", y = colnames(df_gs)[1]) + theme(legend.position = "none")
+```
+
+
+```{r}
+mybarplot <- function(df, colNum){
+  
+  p <- ggplot(df, aes(x = rownames(df), y = df[,colNum], fill = c("A", "B"))) +
+  geom_bar(stat = 'identity') + labs(x = "", y = colnames(df)[colNum]) + theme(legend.position = "none")
+  
+  return(p)
+}
+```
+
+# 추가적인 3개월 그래프
+```{r}
+#options(scipen=999)
+pd <- list()
+
+for (i in 1:9){
+  pd[[i]] <- list(mybarplot(df_gs, i))
+}
+
+multiplot(plotlist = pd, cols = 3, title = "지에스건설의 3개월 재무비율비교")
+```
+
+6번 : 유동비율, 부채비용,자기자본비율,
+ROA,ROE, 영업이익률,당기순이익률
+```{r}
+lotte_edit <- read_excel("6번롯데물산_수정.xlsx")
+colnames(lotte_edit)
+```
+```{r}
+colnames(lotte_edit)[16:length(lotte_edit)]
+```
+* 부채비용은 없으니 제외했다.
+
+```{r}
+pd <- list()
+lotte_edit %>% 
+  filter(회계년도 %in% c("2017/12", "2018/12", "2019/12")) -> lotte_edit3
+for (i in 16:length(lotte_edit)){
+  pd[[i-15]] <- list(myplot(lotte_edit3, i))
+}
+
+multiplot(plotlist = pd, cols = 2, title = "롯데물산의 재무비율(3년)")
+```
+```{r}
+pd <- list()
+
+for (i in 16:length(lotte_edit)){
+  pd[[i-15]] <- list(myplot(lotte_edit, i))
+}
+
+multiplot(plotlist = pd, cols = 2, title = "롯데물산의 재무비율(전 기간)")
+```
+
+
+### 네이버 카카오 마지막
+```{r}
+naka <- read_excel("네이버카카오.xlsx")
+colnames(naka)[c(17, 18)]
+```
+
+* 네이버 카카오 : 부채비용,자기자본비용,비유동비율,비유동장기적합률 
+```{r}
+pd <- list()
+
+for (i in 29:length(naka)){
+  pd[[i-28]] <- list(myplot(naka, i))
+}
+
+multiplot(plotlist = pd, cols = 2, title = "네이버 카카오 지표1")
+```
+
+* 네이버 카카오 : 배당성향, EPS
+
+```{r}
+
+pd <- list()
+
+for (i in 18){
+  pd[[i-17]] <- list(myplot(naka, i))
+}
+
+multiplot(plotlist = pd, title = "네이버 카카오 지표2")
+```
+
+```{r}
+
+naka %>% filter(`회사명` == "네이버(주)") -> naka_naver
+naka %>% filter(`회사명` == "(주)카카오") -> nakaka
+
+multiplot(myplot(naka_naver, 18), myplot(nakaka, 18))
+```
+
+
+

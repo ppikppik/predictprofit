@@ -1,0 +1,122 @@
+library(car)
+library(randtests)
+library(dplyr)
+
+con <- read.csv('total_boo.csv')
+car <- read.csv('total_car.csv')
+gs <- read.csv('gs_boo1.csv')
+hyundai <- read.csv('hyundai_car1.csv')
+#다중 회귀분석 진행
+head(con)
+con<-na.omit(con)
+table(is.na(con))
+car<-na.omit(car)
+table(is.na(car))
+
+
+lm1<-lm(영업이익_차기~영업이익+매출액+매출원가+판매비와.관리비,data=con)
+summary(lm1)
+step_lm<-step(lm1, direction = "both")
+lm1<-lm(영업이익_차기~영업이익+매출원가+판매비와.관리비,data=con)
+summary(lm1)
+durbinWatsonTest(res)
+res<-residuals(lm1)
+
+par(mfrow=c(2,2))
+plot(lm1)
+cooks.d<-cooks.distance(lm1); plot(cooks.d)
+identify(cooks.d)
+dffits<-dffits(lm1);plot(dffits)
+identify(dffits)
+lev<-influence(lm1)$hat;plot(lev)
+identify(lev)
+ri<-rstandard(lm1);plot(ri)
+identify(ri)
+con <- con[-c(77,113),]
+lm1<-lm(영업이익_차기~영업이익+매출원가+판매비와.관리비,data=con)
+summary(lm1)
+vif(lm1)
+
+lm2<-lm(영업이익_차기~영업이익+매출원가+판매비와.관리비,data=car)
+summary(lm2)
+step_lm<-step(lm2, direction = "both")
+lm2<-lm(영업이익_차기~영업이익+판매비와.관리비,data=car)
+summary(lm2)
+durbinWatsonTest(res)
+res<-residuals(lm1)
+
+par(mfrow=c(2,2))
+plot(lm2)
+cooks.d<-cooks.distance(lm2); plot(cooks.d)
+identify(cooks.d)
+dffits<-dffits(lm2);plot(dffits)
+identify(dffits)
+lev<-influence(lm2)$hat;plot(lev)
+identify(lev)
+ri<-rstandard(lm2);plot(ri)
+identify(ri)
+con <- con[-c(77,113),]
+lm2<-lm(영업이익_차기~영업이익+판매비와.관리비,data=car)
+summary(lm2)
+vif(lm2)
+
+
+f1=predict(lm1,gs,interval="prediction")
+f1
+gs=cbind(gs,f1)
+
+f2=predict(lm2,hyundai,interval="prediction")
+hyundai=cbind(hyundai,f2)
+
+head(gs)
+head(hyundai)
+gs2$RUN2 - g2$fit
+
+
+
+
+
+#이상치 분석
+cooks.d<-cooks.distance(lm1); plot(cooks.d)
+identify(cooks.d)
+dffits<-dffits(lm1);plot(dffits)
+identify(dffits)
+lev<-influence(lm1)$hat;plot(lev)
+identify(lev)
+ri<-rstandard(lm1);plot(ri)
+identify(ri)
+
+#이상치 제거
+b1 <- b1[-(95),]
+
+
+lm1<-lm(RUN2~OBP+SLG+BA+BABIP,data=b1)
+summary(lm1)
+
+# 로그변환
+lm1<-lm(log(RUN2)~OBP+SLG+BA+BABIP,data=b1)
+summary(lm7)
+
+# 자기상관 검사
+runs.test(lm1$residuals, alternative="left.sided", threshold=0, plot=TRUE)
+runs.test(lm3$residuals, alternative="left.sided", threshold=0, plot=TRUE)
+runs.test(lm4$residuals, alternative="left.sided", threshold=0, plot=TRUE)
+runs.test(lm5$residuals, alternative="left.sided", threshold=0, plot=TRUE)
+
+
+lm7<-lm(RUN2~OBP+BA,data=b1)
+# stepwise를 활용한 변수 선택
+step_lm<-step(lm7, alpha.enter = 0.3, alpha.remove = 0.3, full=TRUE)
+
+
+# 다중공선성 검사
+vif(lm1)
+  # 최종 회귀분석 모델
+lm8<-lm(RUN2~OBP+BA,data=b1)
+summary(lm8)
+
+# 최종 회귀분석 모델을 활용한 예측 및 평가
+f1=predict(lm8,b2,interval="prediction")
+f1
+b2=cbind(b2,f1)
+b2$RUN2 - b2$fit
